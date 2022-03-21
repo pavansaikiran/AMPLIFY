@@ -109,6 +109,17 @@ public enum ModelAssociation {
         return .belongsTo(associatedFieldName: associatedWith?.stringValue, targetName: targetName)
     }
 
+    /// Convenience method to access the `targetName` for those associations that have one (currently `.belongsTo` and `.hasOne`).
+    /// Returns `nil` for associations that don't have an explicit target name.
+    public func targetName() -> String? {
+        switch self {
+        case .belongsTo(_, let targetName),
+                .hasOne(_, let targetName):
+            return targetName
+        case .hasMany:
+            return nil
+        }
+    }
 }
 
 extension ModelField {
@@ -207,10 +218,19 @@ extension ModelField {
     ///   application making any change to these `public` types should be backward compatible, otherwise it will be a
     ///   breaking change.
     public var isAssociationOwner: Bool {
-        guard case .belongsTo = association else {
+        switch association {
+        case .belongsTo:
+            return true
+        case .hasOne:
+            // in case of a bi-directional association
+            // we pick the model with a belongs-to
+            if case .belongsTo = associatedField?.association {
+                return false
+            }
+            return true
+        default:
             return false
         }
-        return true
     }
 
     /// - Warning: Although this has `public` access, it is intended for internal & codegen use and should not be used
