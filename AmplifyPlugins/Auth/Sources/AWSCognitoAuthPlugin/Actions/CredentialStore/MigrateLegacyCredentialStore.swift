@@ -15,7 +15,7 @@ struct MigrateLegacyCredentialStore: Action {
 
     /// Legacy Keys
     private let AWSCredentialsProviderClassKey = "AWSCognitoCredentialsProvider"
-    private let UserPoolClassKey = "AWSCognitoIdentityUserPool"
+    private let UserPoolClassKey = "AWSCognitoIdentityUserPool" // swiftlint:disable:this identifier_name
     private let AWSCredentialsProviderKeychainAccessKeyId = "accessKey"
     private let AWSCredentialsProviderKeychainSecretAccessKey = "secretKey"
     private let AWSCredentialsProviderKeychainSessionToken = "sessionKey"
@@ -27,8 +27,8 @@ struct MigrateLegacyCredentialStore: Action {
     private let AWSCognitoIdentityUserDeviceSecret = "device.secret"
     private let AWSCognitoIdentityUserDeviceGroup = "device.group"
 
-    private let FederationProviderKey = "federationProvider"
-    private let LoginsMapKey = "loginsMap"
+    private let FederationProviderKey = "federationProvider" // swiftlint:disable:this identifier_name
+    private let LoginsMapKey = "loginsMap" // swiftlint:disable:this identifier_name
 
     private let AWSCognitoAuthUserPoolCurrentUser = "currentUser"
     private let AWSCognitoAuthUserAccessToken = "accessToken"
