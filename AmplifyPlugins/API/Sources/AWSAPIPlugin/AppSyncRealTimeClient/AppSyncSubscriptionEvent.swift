@@ -9,10 +9,10 @@
 import Foundation
 import Amplify
 
-public enum AppSyncSubscriptionEvent {
+enum AppSyncSubscriptionEvent {
     case subscribing
     case subscribed
     case data(JSONValue)
     case unsubscribed
-    case error([Error])
+    case error(JSONValue)
 }

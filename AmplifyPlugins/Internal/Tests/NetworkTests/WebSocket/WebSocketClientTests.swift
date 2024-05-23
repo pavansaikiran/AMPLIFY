@@ -8,7 +8,8 @@
 
 import XCTest
 import Combine
-@testable @_spi(WebSocket) import AWSPluginsCore
+@testable import AWSPluginsCore
+@testable @_spi(WebSocket) @_spi(NetworkReachability) import InternalAmplifyNetwork
 
 fileprivate let timeout: TimeInterval = 5
 

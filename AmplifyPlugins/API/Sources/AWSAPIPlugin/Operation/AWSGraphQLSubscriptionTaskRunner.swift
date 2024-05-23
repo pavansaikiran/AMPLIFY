@@ -147,8 +147,8 @@ public class AWSGraphQLSubscriptionTaskRunner<R: Decodable>: InternalTaskRunner,
         case .unsubscribed:
             send(GraphQLSubscriptionEvent<R>.connection(.disconnected))
             finish()
-        case .error(let errors):
-            fail(toAPIError(errors, type: R.self))
+        case .error(let payload):
+            fail(toAPIError(Self.decodeAppSyncRealTimeResponseError(payload), type: R.self))
         }
     }
 
@@ -176,6 +176,38 @@ public class AWSGraphQLSubscriptionTaskRunner<R: Decodable>: InternalTaskRunner,
 
             fail(APIError.operationError("Failed to deserialize", "", error))
         }
+    }
+
+    internal static func decodeAppSyncRealTimeResponseError(_ data: JSONValue?) -> [Error] {
+        let knownAppSyncRealTimeRequestErorrs =
+            decodeAppSyncRealTimeRequestError(data)
+            .filter { !$0.isUnknown }
+        if knownAppSyncRealTimeRequestErorrs.isEmpty {
+            let graphQLErrors = decodeGraphQLErrors(data)
+            return graphQLErrors.isEmpty
+                ? [APIError.operationError("Failed to decode AppSync error response", "", nil)]
+                : graphQLErrors
+        } else {
+            return knownAppSyncRealTimeRequestErorrs
+        }
+    }
+
+    internal static func decodeGraphQLErrors(_ data: JSONValue?) -> [GraphQLError] {
+        do {
+            return try GraphQLErrorDecoder.decodeAppSyncErrors(data)
+        } catch {
+            print("Failed to decode errors: \(error)")
+            return []
+        }
+    }
+
+    internal static func decodeAppSyncRealTimeRequestError(_ data: JSONValue?) -> [AppSyncRealTimeRequest.Error] {
+        guard let errorsJson = data?.errors else {
+            print("No 'errors' field found in response json")
+            return []
+        }
+        let errors = errorsJson.asArray ?? [errorsJson]
+        return errors.compactMap(AppSyncRealTimeRequest.parseResponseError(error:))
     }
 
 }
@@ -329,8 +361,11 @@ final public class AWSGraphQLSubscriptionOperation<R: Decodable>: GraphQLSubscri
             dispatchInProcess(data: GraphQLSubscriptionEvent<R>.connection(.disconnected))
             dispatch(result: .successfulVoid)
             finish()
-        case .error(let errors):
-            dispatch(result: .failure(toAPIError(errors, type: R.self)))
+        case .error(let payload):
+            dispatch(result: .failure(toAPIError(
+                AWSGraphQLSubscriptionTaskRunner<R>.decodeAppSyncRealTimeResponseError(payload),
+                type: R.self
+            )))
             finish()
         }
     }
@@ -438,3 +473,4 @@ fileprivate func toAPIError<R: Decodable>(_ errors: [Error], type: R.Type) -> AP
     }
 #endif
 }
+

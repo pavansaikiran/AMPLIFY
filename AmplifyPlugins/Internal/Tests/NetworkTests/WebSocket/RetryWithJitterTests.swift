@@ -7,7 +7,8 @@
 
 
 import XCTest
-@testable @_spi(WebSocket) import AWSPluginsCore
+@testable import AWSPluginsCore
+@testable @_spi(RetryWithJitter) import InternalAmplifyNetwork
 
 class RetryWithJitterTests: XCTestCase {
     struct TestError: Error {

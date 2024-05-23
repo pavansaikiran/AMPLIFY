@@ -8,30 +8,48 @@
 
 import Foundation
 
-public enum AppSyncRealTimeRequestAuth {
+enum AppSyncRealTimeRequestAuth {
     case authToken(AuthToken)
     case apiKey(ApiKey)
     case iam(IAM)
 
-    public struct AuthToken {
+    struct AuthToken {
         let host: String
         let authToken: String
+
+        init(host: String, authToken: String) {
+            self.host = host
+            self.authToken = authToken
+        }
     }
 
-    public struct ApiKey {
+    struct ApiKey {
         let host: String
         let apiKey: String
         let amzDate: String
+        
+        init(host: String, apiKey: String, amzDate: String) {
+            self.host = host
+            self.apiKey = apiKey
+            self.amzDate = amzDate
+        }
     }
 
-    public struct IAM {
+    struct IAM {
         let host: String
         let authToken: String
         let securityToken: String
         let amzDate: String
+
+        init(host: String, authToken: String, securityToken: String, amzDate: String) {
+            self.host = host
+            self.authToken = authToken
+            self.securityToken = securityToken
+            self.amzDate = amzDate
+        }
     }
 
-    public struct URLQuery {
+    struct URLQuery {
         let header: AppSyncRealTimeRequestAuth
         let payload: String
 
@@ -53,7 +71,7 @@ public enum AppSyncRealTimeRequestAuth {
 
             urlComponents.queryItems = [
                 URLQueryItem(name: "header", value: headerJsonData.base64EncodedString()),
-                URLQueryItem(name: "payload", value: try? payload.base64EncodedString())
+                URLQueryItem(name: "payload", value: payload.data(using: .utf8)?.base64EncodedString())
             ]
 
             return urlComponents.url ?? url

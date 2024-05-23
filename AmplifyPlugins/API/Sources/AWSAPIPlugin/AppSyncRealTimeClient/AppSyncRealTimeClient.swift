@@ -7,9 +7,17 @@
 
 
 import Foundation
-import Amplify
 import Combine
-@_spi(WebSocket) import AWSPluginsCore
+import Amplify
+@_spi(WebSocket) @_spi(RetryWithJitter) import InternalAmplifyNetwork
+
+protocol AppSyncRealTimeClientProtocol {
+    func connect() async throws
+    func disconnectWhenIdel() async
+    func disconnect() async
+    func subscribe(id: String, query: String) async throws -> AnyPublisher<AppSyncSubscriptionEvent, Never>
+    func unsubscribe(id: String) async throws
+}
 
 /**
  The AppSyncRealTimeClient conforms to the AppSync real-time WebSocket protocol.
@@ -205,7 +213,7 @@ actor AppSyncRealTimeClient: AppSyncRealTimeClientProtocol {
      - Parameters:
         - id: unique identifier of the subscription.
      */
-    func unsubscribe(id: String) async throws {
+    public func unsubscribe(id: String) async throws {
         defer {
             log.debug("[AppSyncRealTimeClient] deleted subscription with id: \(id)")
             subscriptions.removeValue(forKey: id)
@@ -287,7 +295,7 @@ actor AppSyncRealTimeClient: AppSyncRealTimeClientProtocol {
         .map { response -> AppSyncSubscriptionEvent? in
             switch response.type {
             case .connectionError, .error:
-                return .error(Self.decodeAppSyncRealTimeResponseError(response.payload))
+                return response.payload.map { .error($0) }
             case .data:
                 return response.payload.map { .data($0) }
             default:
@@ -296,38 +304,6 @@ actor AppSyncRealTimeClient: AppSyncRealTimeClientProtocol {
         }
         .compactMap { $0 }
         .eraseToAnyPublisher()
-    }
-
-    private static func decodeAppSyncRealTimeResponseError(_ data: JSONValue?) -> [Error] {
-        let knownAppSyncRealTimeRequestErorrs =
-            Self.decodeAppSyncRealTimeRequestError(data)
-            .filter { !$0.isUnknown }
-        if knownAppSyncRealTimeRequestErorrs.isEmpty {
-            let graphQLErrors = Self.decodeGraphQLErrors(data)
-            return graphQLErrors.isEmpty
-                ? [APIError.operationError("Failed to decode AppSync error response", "", nil)]
-                : graphQLErrors
-        } else {
-            return knownAppSyncRealTimeRequestErorrs
-        }
-    }
-
-    private static func decodeGraphQLErrors(_ data: JSONValue?) -> [GraphQLError] {
-        do {
-            return try GraphQLErrorDecoder.decodeAppSyncErrors(data)
-        } catch {
-            log.debug("[AppSyncRealTimeClient] Failed to decode errors: \(error)")
-            return []
-        }
-    }
-
-    private static func decodeAppSyncRealTimeRequestError(_ data: JSONValue?) -> [AppSyncRealTimeRequest.Error] {
-        guard let errorsJson = data?.errors else {
-            log.error("[AppSyncRealTimeClient] No 'errors' field found in response json")
-            return []
-        }
-        let errors = errorsJson.asArray ?? [errorsJson]
-        return errors.compactMap(AppSyncRealTimeRequest.parseResponseError(error:))
     }
 
     private func bindCancellableToConnection(_ cancellable: AnyCancellable) {
@@ -438,15 +414,15 @@ extension Publisher where Output == AppSyncRealTimeSubscription.State, Failure =
 }
 
 extension AppSyncRealTimeClient: DefaultLogger {
-    static var log: Logger {
+    public static var log: Logger {
         Amplify.Logging.logger(forCategory: CategoryType.api.displayName, forNamespace: String(describing: self))
     }
 
-    nonisolated var log: Logger { Self.log }
+    public nonisolated var log: Logger { Self.log }
 }
 
 extension AppSyncRealTimeClient: Resettable {
-    func reset() async {
+    public func reset() async {
         subject.send(completion: .finished)
         cancellables = Set()
         cancellablesBindToConnection = Set()

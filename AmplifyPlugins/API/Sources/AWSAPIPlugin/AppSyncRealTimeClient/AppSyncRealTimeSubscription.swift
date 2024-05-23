@@ -9,7 +9,7 @@
 import Foundation
 import Combine
 import Amplify
-@_spi(WebSocket) import AWSPluginsCore
+@_spi(RetryWithJitter) import InternalAmplifyNetwork
 
 /**
  AppSyncRealTimeSubscription reprensents one realtime subscription to AppSync realtime server.
@@ -36,8 +36,8 @@ actor AppSyncRealTimeSubscription {
 
     private weak var appSyncRealTimeClient: AppSyncRealTimeClient?
 
-    public let id: String
-    public let query: String
+    let id: String
+    let query: String
 
 
     init(id: String, query: String, appSyncRealTimeClient: AppSyncRealTimeClient) {
@@ -121,9 +121,9 @@ actor AppSyncRealTimeSubscription {
 }
 
 extension AppSyncRealTimeSubscription: DefaultLogger {
-    static var log: Logger {
+    public static var log: Logger {
         Amplify.Logging.logger(forCategory: CategoryType.api.displayName, forNamespace: String(describing: self))
     }
 
-    nonisolated var log: Logger { Self.log }
+    nonisolated public var log: Logger { Self.log }
 }
