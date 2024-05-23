@@ -8,6 +8,6 @@
 
 import Foundation
 
-protocol AppSyncRequestInterceptor {
+public protocol AppSyncRequestInterceptor {
     func interceptRequest(event: AppSyncRealTimeRequest, url: URL) async -> AppSyncRealTimeRequest
 }

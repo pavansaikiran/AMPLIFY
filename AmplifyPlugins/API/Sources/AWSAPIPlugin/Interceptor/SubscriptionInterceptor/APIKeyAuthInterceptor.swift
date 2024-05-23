@@ -10,18 +10,18 @@ import Foundation
 import Amplify
 @_spi(WebSocket) import AWSPluginsCore
 
-class APIKeyAuthInterceptor {
+public class APIKeyAuthInterceptor {
     private let apiKey: String
     private let getAuthHeader = authHeaderBuilder()
 
-    init(apiKey: String) {
+    public init(apiKey: String) {
         self.apiKey = apiKey
     }
 
 }
 
 extension APIKeyAuthInterceptor: WebSocketInterceptor {
-    func interceptConnection(url: URL) async -> URL {
+    public func interceptConnection(url: URL) async -> URL {
         let authHeader = getAuthHeader(apiKey, AppSyncRealTimeClientFactory.appSyncApiEndpoint(url).host!)
         return AppSyncRealTimeRequestAuth.URLQuery(
             header: .apiKey(authHeader)
@@ -30,7 +30,7 @@ extension APIKeyAuthInterceptor: WebSocketInterceptor {
 }
 
 extension APIKeyAuthInterceptor: AppSyncRequestInterceptor {
-    func interceptRequest(event: AppSyncRealTimeRequest, url: URL) async -> AppSyncRealTimeRequest {
+    public func interceptRequest(event: AppSyncRealTimeRequest, url: URL) async -> AppSyncRealTimeRequest {
         let host = AppSyncRealTimeClientFactory.appSyncApiEndpoint(url).host!
         guard case .start(let request) = event else {
             return event

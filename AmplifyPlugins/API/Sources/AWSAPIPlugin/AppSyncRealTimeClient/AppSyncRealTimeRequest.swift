@@ -16,12 +16,12 @@ public enum AppSyncRealTimeRequest {
     case stop(String)
 
     public struct StartRequest {
-        let id: String
+        public let id: String
         let data: String
         let auth: AppSyncRealTimeRequestAuth?
     }
 
-    var id: String? {
+    public var id: String? {
         switch self {
         case let .start(request): return request.id
         case let .stop(id): return id

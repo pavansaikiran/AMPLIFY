@@ -131,7 +131,7 @@ extension AppSyncRealTimeClientFactory {
      1. api.example.com/graphql -> api.example.com/graphql/realtime
      2. abc.appsync-api.us-east-1.amazonaws.com/graphql -> abc.appsync-realtime-api.us-east-1.amazonaws.com/graphql
      */
-    static func appSyncRealTimeEndpoint(_ url: URL) -> URL {
+    public static func appSyncRealTimeEndpoint(_ url: URL) -> URL {
         guard let host = url.host else {
             return url
         }

@@ -8,9 +8,9 @@
 
 import Foundation
 import Combine
-@_spi(WebSocket) import AWSPluginsCore
+import AWSPluginsCore
 
-protocol AppSyncWebSocketClientProtocol: AnyObject {
+public protocol AppSyncWebSocketClientProtocol: AnyObject {
     var isConnected: Bool { get async }
     var publisher: AnyPublisher<WebSocketEvent, Never> { get async }
 
