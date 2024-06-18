@@ -12,6 +12,7 @@ import AWSPluginsCore
 import AWSClientRuntime // AWSClientRuntime.CredentialsProviding
 import ClientRuntime // SdkHttpRequestBuilder
 import InternalAmplifyCredentials // AmplifyAWSCredentialsProvider()
+import AwsCommonRuntimeKit // CommonRuntimeKit.initialize()
 
 public final class AWSCognitoAuthPlugin: AWSCognitoAuthPluginBehavior {
 
@@ -89,11 +90,10 @@ extension AWSCognitoAuthPlugin {
 }
 
 extension AWSCognitoAuthPlugin {
-    public static func signRequest(_ urlRequest: URLRequest, region: String) async throws -> URLRequest? {
+    public static func signRequest(_ urlRequest: URLRequest, 
+                                   region: String) async throws -> URLRequest? {
         let requestBuilder = try createAppSyncSdkHttpRequestBuilder(
-            urlRequest: urlRequest,
-            headers: urlRequest.allHTTPHeaderFields,
-            body: urlRequest.httpBody)
+            urlRequest: urlRequest)
 
         guard let sdkHttpRequest = try await sigV4SignedRequest(
             requestBuilder: requestBuilder, 
@@ -108,84 +108,16 @@ extension AWSCognitoAuthPlugin {
 
         return setHeaders(from: sdkHttpRequest, to: urlRequest)
     }
-    public struct IAM {
-        let host: String
-        let authToken: String
-        let securityToken: String
-        let amzDate: String
-    }
-    
-    public static func getAuthHeader(_ endpoint: URL, with payload: Data, region: String) async throws -> (String, String, String, String)? {
-        guard let host = endpoint.host else {
-            return nil
-        }
-
-        /// The process of getting the auth header for an IAM based authentication request is as follows:
-        ///
-        /// 1. A request is created with the IAM based auth headers (date,  accept, content encoding, content type, and
-        /// additional headers.
-        let requestBuilder = SdkHttpRequestBuilder()
-            .withHost(host)
-            .withPath(endpoint.path)
-            .withMethod(.post)
-            .withPort(443)
-            .withProtocol(.https)
-            .withHeader(name: "accept", value: "application/json, text/javascript")
-            .withHeader(name: "content-encoding", value: "amz-1.0")
-            .withHeader(name: "Content-Type", value: "application/json; charset=UTF-8")
-            .withHeader(name: "host", value: host)
-            .withBody(.data(payload))
-
-        /// 2. The request is SigV4 signed by using all the available headers on the request. By signing the request, the signature is added to
-        /// the request headers as authorization and security token.
-        do {
-            guard let urlRequest = try await sigV4SignedRequest(
-                requestBuilder: requestBuilder, 
-                credentialsProvider: AmplifyAWSCredentialsProvider(),
-                signingName: "appsync",
-                signingRegion: region, // region
-                date: Date())
-            else {
-                print("Unable to sign request")
-                return nil
-            }
-
-            // TODO: Using long lived credentials without getting a session with security token will fail
-            // since the session token does not exist on the signed request, and is an empty string.
-            // Once Amplify.Auth is ready to be integrated, this code path needs to be re-tested.
-            let headers = urlRequest.headers.headers.reduce([String: String]()) { partialResult, header in
-                switch header.name.lowercased() {
-                case "authorization", "x-amz-date", "x-amz-security-token":
-                    guard let headerValue = header.value.first else {
-                        return partialResult
-                    }
-                    return partialResult.merging([header.name.lowercased(): headerValue]) { $1 }
-                default:
-                    return partialResult
-                }
-            }
-
-            return (
-                host,
-                headers["authorization"] ?? "",
-                headers["x-amz-security-token"] ?? "",
-                headers["x-amz-date"] ?? ""
-            )
-        } catch {
-            print("Unable to sign request")
-            return nil
-        }
-    }
-
 
     // Helper
 
     public static func sigV4SignedRequest(requestBuilder: SdkHttpRequestBuilder,
-                                   credentialsProvider: AWSClientRuntime.CredentialsProviding,
-                                   signingName: Swift.String,
-                                   signingRegion: Swift.String,
-                                   date: ClientRuntime.Date) async throws -> SdkHttpRequest? {
+                                          credentialsProvider: AWSClientRuntime.CredentialsProviding,
+                                          signingName: Swift.String,
+                                          signingRegion: Swift.String,
+                                          date: ClientRuntime.Date) async throws -> SdkHttpRequest? {
         do {
+            CommonRuntimeKit.initialize()
             let credentials = try await credentialsProvider.getCredentials()
 
             let flags = SigningFlags(useDoubleURIEncode: true,
@@ -221,9 +153,7 @@ extension AWSCognitoAuthPlugin {
         return urlRequest
     }
 
-    static func createAppSyncSdkHttpRequestBuilder(urlRequest: URLRequest,
-                                            headers: [String : String]?,
-                                            body: Data?) throws -> SdkHttpRequestBuilder {
+    static func createAppSyncSdkHttpRequestBuilder(urlRequest: URLRequest) throws -> SdkHttpRequestBuilder {
 
         guard let url = urlRequest.url else {
             throw AuthError.unknown("Could not get url from mutable request", nil)

@@ -10,6 +10,7 @@ import Amplify
 import ClientRuntime
 import AWSClientRuntime
 import AwsCommonRuntimeKit
+import AWSPluginsCore
 
 public protocol AWSSignatureV4Signer {
     func sigV4SignedRequest(requestBuilder: SdkHttpRequestBuilder,
