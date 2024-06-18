@@ -12,12 +12,12 @@ import Amplify
 import AWSClientRuntime
 import ClientRuntime
 
-class IAMAuthInterceptor {
+public class IAMAuthInterceptor {
 
     let authProvider: CredentialsProviding
     let region: AWSRegionType
 
-    init(_ authProvider: CredentialsProviding, region: AWSRegionType) {
+    public init(_ authProvider: CredentialsProviding, region: AWSRegionType) {
         self.authProvider = authProvider
         self.region = region
     }
@@ -88,7 +88,7 @@ class IAMAuthInterceptor {
 }
 
 extension IAMAuthInterceptor: WebSocketInterceptor {
-    func interceptConnection(url: URL) async -> URL {
+    public func interceptConnection(url: URL) async -> URL {
         let connectUrl = AppSyncRealTimeClientFactory.appSyncApiEndpoint(url).appendingPathComponent("connect")
         guard let authHeader = await getAuthHeader(connectUrl, with: "{}") else {
             return connectUrl
@@ -101,7 +101,7 @@ extension IAMAuthInterceptor: WebSocketInterceptor {
 }
 
 extension IAMAuthInterceptor: AppSyncRequestInterceptor {
-    func interceptRequest(
+    public func interceptRequest(
         event: AppSyncRealTimeRequest,
         url: URL
     ) async -> AppSyncRealTimeRequest {

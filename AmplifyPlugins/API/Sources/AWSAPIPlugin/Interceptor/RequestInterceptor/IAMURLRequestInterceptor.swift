@@ -11,7 +11,7 @@ import InternalAmplifyCredentials
 import Foundation
 import ClientRuntime
 
-typealias AWSRegionType = String
+public typealias AWSRegionType = String
 
 struct IAMURLRequestInterceptor: URLRequestInterceptor {
     let iamCredentialsProvider: IAMCredentialsProvider

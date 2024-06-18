@@ -13,6 +13,11 @@ import AwsCommonRuntimeKit
 
 public protocol AWSSignatureV4Signer {
     func sigV4SignedRequest(requestBuilder: SdkHttpRequestBuilder,
+                            signingName: Swift.String,
+                            signingRegion: Swift.String,
+                            date: ClientRuntime.Date) async throws -> SdkHttpRequest?
+
+    func sigV4SignedRequest(requestBuilder: SdkHttpRequestBuilder,
                             credentialsProvider: AWSClientRuntime.CredentialsProviding,
                             signingName: Swift.String,
                             signingRegion: Swift.String,
@@ -20,7 +25,20 @@ public protocol AWSSignatureV4Signer {
 }
 
 public class AmplifyAWSSignatureV4Signer: AWSSignatureV4Signer {
+
     public init() {
+    }
+
+    public func sigV4SignedRequest(requestBuilder: SdkHttpRequestBuilder,
+                                   signingName: String,
+                                   signingRegion: String,
+                                   date: Date) async throws -> SdkHttpRequest? {
+
+        try await sigV4SignedRequest(requestBuilder: requestBuilder,
+                                     credentialsProvider: AWSAuthService().getCredentialsProvider(),
+                                     signingName: signingName,
+                                     signingRegion: signingRegion,
+                                     date: date)
     }
 
     public func sigV4SignedRequest(requestBuilder: SdkHttpRequestBuilder,
